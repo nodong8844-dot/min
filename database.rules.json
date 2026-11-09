@@ -1,0 +1,69 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "prices": {
+      ".read": true,
+      "$sym": {
+        ".write": "auth != null && ($sym === 'KORU' || $sym === 'SOXL' || $sym === 'NASDAQ' || $sym === 'KOSPI' || $sym === 'SOX' || $sym === 'USDKRW')",
+        ".validate": "newData.hasChildren(['p','ts','src']) && newData.child('p').isNumber() && newData.child('p').val() > 0 && newData.child('p').val() < 1000000 && newData.child('ts').isNumber() && newData.child('src').isString() && newData.child('src').val().length < 20 && (!newData.child('proxy').exists() || (newData.child('proxy').isString() && newData.child('proxy').val().length <= 8))"
+      }
+    },
+    "priceLease": {
+      ".read": "auth != null",
+      ".write": "auth != null",
+      ".validate": "newData.hasChildren(['uid','until']) && newData.child('uid').val() === auth.uid"
+    },
+    "rooms": {
+      "$room": {
+        ".validate": "$room.matches(/^[a-z0-9-]{1,24}$/)",
+        "users": {
+          ".read": true,
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid",
+            ".validate": "newData.child('nick').isString() && newData.child('nick').val().length >= 1 && newData.child('nick').val().length <= 12 && (!newData.child('x').exists() || (newData.child('x').isNumber() && newData.child('x').val() >= 0 && newData.child('x').val() <= 100)) && (!newData.child('y').exists() || (newData.child('y').isNumber() && newData.child('y').val() >= 0 && newData.child('y').val() <= 100)) && (!newData.child('pts').exists() || (newData.child('pts').isNumber() && newData.child('pts').val() >= 0 && newData.child('pts').val() <= 10000000)) && (!newData.child('hb').exists() || (newData.child('hb').isString() && newData.child('hb').val().length <= 6)) && (!newData.child('title').exists() || (newData.child('title').isString() && newData.child('title').val().length <= 12))"
+          }
+        },
+        "chat": {
+          ".read": true,
+          ".indexOn": [
+            "ts"
+          ],
+          "$msg": {
+            ".write": "auth != null && !data.exists()",
+            ".validate": "newData.child('uid').val() === auth.uid && newData.child('text').isString() && newData.child('text').val().length >= 1 && newData.child('text').val().length <= 120 && newData.child('nick').isString() && newData.child('nick').val().length <= 12 && newData.child('ts').val() <= now"
+          }
+        },
+        "fx": {
+          ".read": true,
+          "$fx": {
+            ".write": "auth != null && !data.exists()",
+            ".validate": "newData.child('uid').val() === auth.uid && newData.child('kind').isString() && newData.child('kind').val().length <= 20"
+          }
+        },
+        "moktak": {
+          ".read": true,
+          ".write": "auth != null",
+          ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() : 0) + 1"
+        },
+        "counters": {
+          ".read": true,
+          "$name": {
+            ".write": "auth != null",
+            ".validate": "$name.matches(/^[a-z0-9]{1,16}$/) && newData.isNumber() && newData.val() === (data.exists() ? data.val() : 0) + 1"
+          }
+        },
+        "votes": {
+          ".read": true,
+          "$topic": {
+            ".validate": "$topic.matches(/^[a-z0-9-]{1,32}$/)",
+            "$uid": {
+              ".write": "auth != null && auth.uid === $uid",
+              ".validate": "newData.isString() && (newData.val() === 'up' || newData.val() === 'down')"
+            }
+          }
+        }
+      }
+    }
+  }
+}

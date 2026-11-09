@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:,">
+<title>3배 레버리지 원복 계산기 (KORU · SOXL)</title>
+<style>
+:root{color-scheme:dark;--bg:#0a0e15;--card:#111723;--card2:#0d121c;--ink:#e8edf5;--ink2:#b7c0cf;--mute:#7d889a;--line:#1f2838;--acc:#f5a524;--acc2:rgba(245,165,36,.10);--accInk:#1a1204;--up:#ff4d57;--down:#4d8dff;--warn:#2b2412;--warnInk:#f3d68a;--err:#331a1d;--errInk:#ffb4b4;
+--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;
+--q100:#cde2fb;--q200:#9ec5f4;--q300:#6da7ec;--q400:#3987e5;--q500:#256abf;--q600:#184f95;--q700:#0d366b;--surface:#111723;
+--mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,"D2Coding",monospace}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg) radial-gradient(1200px 500px at 50% -200px,rgba(245,165,36,.08),transparent) no-repeat;background-image:linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.025) 1px,transparent 1px);background-size:32px 32px;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","Noto Sans KR",sans-serif;line-height:1.5;-webkit-text-size-adjust:100%}
+.wrap{max-width:960px;margin:0 auto;padding:14px 14px 56px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+h1{font-size:19px;margin:0}
+.navbtn{font-size:13px;padding:7px 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);color:var(--ink);text-decoration:none;white-space:nowrap}
+.tabs{display:flex;gap:8px;margin-bottom:12px;position:sticky;top:33px;z-index:5;background:rgba(10,14,21,.92);backdrop-filter:blur(6px);padding:6px 0}
+.tab{flex:1;padding:11px 8px;border:1px solid var(--line);background:var(--card);border-radius:10px;font-size:15px;font-weight:700;color:var(--mute);cursor:pointer;line-height:1.25}
+.tab small{display:block;font-size:11px;font-weight:500;opacity:.85}
+.tab.on{background:var(--acc);border-color:var(--acc);color:var(--accInk)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:12px}
+.card h2{font-size:14px;margin:0 0 12px;color:var(--ink2);font-weight:700}
+.idxinfo{font-size:12px;color:var(--mute);margin:-4px 0 12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+label{display:block;font-size:12px;color:var(--mute);margin-bottom:4px}
+input[type=number],input[type=text],select,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--card2);color:var(--ink);font-size:16px;font-family:inherit}
+input[type=number]{font-family:var(--mono)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 2px rgba(245,165,36,.25)}
+textarea{font-size:13px;min-height:110px;font-family:ui-monospace,Menlo,Consolas,monospace}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.row{display:flex;gap:8px;align-items:center}
+.hint{font-size:11.5px;color:var(--mute);margin-top:4px}
+.chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:3px 8px;border-radius:999px;background:var(--acc2);color:var(--acc);margin-top:6px;border:1px solid rgba(245,165,36,.35)}
+.btn{padding:9px 14px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--ink);font-size:14px;cursor:pointer;font-family:inherit}
+.btn.pri{background:var(--acc);border-color:var(--acc);color:var(--accInk);font-weight:800}
+.msgs .e{background:var(--err);color:var(--errInk);border-radius:8px;padding:8px 10px;font-size:13px;margin-bottom:6px}
+.msgs .w{background:var(--warn);color:var(--warnInk);border-radius:8px;padding:8px 10px;font-size:13px;margin-bottom:6px}
+.headline{font-size:18px;font-weight:700;margin:2px 0 4px}
+.cond{font-size:13px;color:var(--mute);margin-bottom:12px}
+.kpis{display:grid;grid-template-columns:1.7fr 1fr 1fr 1fr;gap:10px}
+@media(max-width:760px){.kpis{grid-template-columns:1fr 1fr}.kpi .v{font-size:19px}.kpis .kpi:last-child{grid-column:1/-1}}
+.kpi{border:1px solid var(--line);border-radius:10px;padding:12px;background:var(--card2);min-width:0}
+.kpi .t{font-size:12px;color:var(--mute)}
+.kpi .v{font-size:22px;font-weight:800;margin-top:2px;word-break:keep-all;font-family:var(--mono);letter-spacing:-.5px}
+.kpi .s{font-size:11.5px;color:var(--mute);margin-top:2px}
+.kpi.main{background:linear-gradient(180deg,rgba(245,165,36,.14),rgba(245,165,36,.04));border:2px solid var(--acc);box-shadow:0 0 24px rgba(245,165,36,.15) inset}
+.kpi.main .v{color:var(--acc);text-shadow:0 0 12px rgba(245,165,36,.35)}
+.kpi.main .v{font-size:34px}
+@media(max-width:760px){.kpi.main{grid-column:1/-1;order:-1}}
+table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+td{font-family:var(--mono);font-size:12.5px}
+td:first-child{font-family:inherit;font-size:13px}
+th,td{padding:8px 6px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--mute);font-weight:600}
+.tblwrap{overflow-x:auto}
+.up{color:var(--up)}.down{color:var(--down)}
+.tag{display:inline-block;font-size:11px;padding:1px 7px;border-radius:999px;border:1px solid var(--line);color:var(--ink2);margin-left:4px;vertical-align:middle}
+details.adv{border:1px solid var(--line);border-radius:12px;background:var(--card);margin-bottom:12px}
+details.adv>summary{cursor:pointer;padding:14px 16px;font-weight:700;font-size:14px;color:var(--ink2);list-style:none}
+details.adv>summary::before{content:"▸ ";}
+details.adv[open]>summary::before{content:"▾ ";}
+details.adv .in{padding:0 16px 16px}
+.sub{border-top:1px dashed var(--line);margin-top:14px;padding-top:12px}
+.sub h3{font-size:13px;margin:0 0 8px;color:var(--ink2)}
+.note{font-size:12px;color:var(--mute);margin-top:8px}
+.warnbox{background:var(--warn);color:var(--warnInk);border-radius:8px;padding:10px 12px;font-size:12.5px;margin-top:10px}
+.chart{width:100%;position:relative}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:12px;color:var(--ink2);margin-bottom:6px}
+.legend i{display:inline-block;width:14px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.tip{position:absolute;pointer-events:none;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.12);display:none;white-space:nowrap;z-index:3}
+.tip b{font-variant-numeric:tabular-nums}
+.mx td{text-align:center;font-weight:600;border:2px solid var(--card);border-radius:4px}
+.mx th{text-align:center}
+.mx td{font-family:var(--mono)}
+.mx td.sel{outline:3px solid var(--acc);outline-offset:-3px}
+.mx td:first-child,.mx th:first-child{text-align:left;font-weight:600;background:none}
+.tape{overflow:hidden;white-space:nowrap;border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:#06090e;font-family:var(--mono);font-size:12.5px;margin:0;position:sticky;top:0;z-index:6}
+.tape .run{display:inline-block;padding:7px 0;animation:tape 40s linear infinite}
+.tape span.it{margin:0 18px;color:var(--ink2)}
+.tape span.it b{color:var(--ink);margin-right:6px}
+@keyframes tape{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.tape .run{animation:none}}
+.mkt{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
+@media(max-width:760px){.mkt{grid-template-columns:1fr 1fr}}
+.mkt .m{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:8px 10px;min-width:0}
+.mkt .m .n{font-size:11.5px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mkt .m .v{font-family:var(--mono);font-size:17px;font-weight:700}
+.mkt .m .c{font-family:var(--mono);font-size:12px}
+.mkt .m .s{font-size:10.5px;color:var(--mute)}
+.livebar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:12.5px;margin-bottom:12px}
+.livedot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--mute);margin-right:6px;vertical-align:middle}
+.livedot.on{background:#ff4d57;box-shadow:0 0 8px #ff4d57;animation:blink 1.6s infinite}
+@keyframes blink{50%{opacity:.35}}
+h1 small{font-size:11px;font-weight:600;color:var(--acc);border:1px solid rgba(245,165,36,.4);border-radius:4px;padding:1px 6px;margin-left:8px;vertical-align:middle;font-family:var(--mono)}
+footer{font-size:11.5px;color:var(--mute);margin-top:18px;line-height:1.6}
+.sr{position:absolute;left:-9999px}
+</style>
+</head>
+<body>
+<div class="tape" id="tape" aria-label="시세 테이프"><div class="run" id="tapeRun"></div></div>
+<div class="wrap">
+  <header class="top">
+    <h1><span class="livedot" id="liveDot"></span>3배 레버리지 원복 계산기<small>KORU·SOXL</small></h1>
+    <span style="display:flex;gap:6px"><a class="navbtn" href="room3d.html">🪷 3D 객장 입장</a><a class="navbtn" href="room.html">2D</a></span>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button class="tab on" data-t="koru" role="tab">KORU<small>한국 3배 · 코스피 환산</small></button>
+    <button class="tab" data-t="soxl" role="tab">SOXL<small>미국 반도체 3배 · SOX 환산</small></button>
+  </div>
+
+  <div class="mkt" id="mkt"></div>
+  <div class="livebar" id="livebar"></div>
+
+  <!-- ================= 기본 입력 ================= -->
+  <div class="card">
+    <h2>기본 입력</h2>
+    <div class="idxinfo" id="idxinfo"></div>
+    <div class="grid">
+      <div><label for="avg">ETF 평단가 ($)</label><input id="avg" type="number" step="0.01" min="0" inputmode="decimal" placeholder="예: 16.73"></div>
+      <div><label for="px">ETF 현재가 ($)</label><input id="px" type="number" step="0.01" min="0" inputmode="decimal" placeholder="증권사 앱의 현재가">
+        <div id="liveChip"></div></div>
+      <div><label for="idx" id="idxLabel">현재 비교지수 (pt)</label><input id="idx" type="number" step="0.01" min="0" inputmode="decimal">
+        <div id="idxChip"></div></div>
+      <div><label for="period">예상 보유기간</label>
+        <select id="period"><option value="1">1개월</option><option value="3">3개월</option><option value="6">6개월</option><option value="12">1년</option><option value="24">2년</option><option value="custom">직접 입력</option></select>
+        <input id="months" type="number" step="1" min="1" inputmode="decimal" placeholder="개월 수" style="margin-top:6px;display:none"></div>
+      <div><label for="vol">연간 변동성 가정 (%)</label>
+        <div class="row"><input id="volR" type="range" min="0" max="100" step="1" aria-label="변동성 슬라이더"><input id="vol" type="number" step="1" min="0" inputmode="decimal" style="width:84px"></div>
+        <div class="hint" id="volHint"></div></div>
+      <div><label for="fee">연간 운용보수 (%)</label><input id="fee" type="number" step="0.01" min="0" inputmode="decimal">
+        <div class="hint" id="feeHint"></div></div>
+    </div>
+    <div class="row" style="margin-top:12px;flex-wrap:wrap">
+      <button class="btn" id="exBtn">예시값 넣기</button>
+      <button class="btn" id="clrBtn">입력 지우기</button>
+    </div>
+    <div class="hint" style="margin-top:8px">평단과 현재가는 같은 기준이어야 합니다. 주식분할·역분할이 있었다면 증권사 평단이 분할 조정된 값인지 확인하세요. 분배금(배당)은 가격에 반영되지 않습니다.</div>
+  </div>
+
+  <!-- ================= 결과 ================= -->
+  <div class="card" id="resCard">
+    <div class="msgs" id="msgs"></div>
+    <div id="res"></div>
+  </div>
+
+  <!-- ================= 고급 설정 ================= -->
+  <details class="adv" id="advBox">
+    <summary>고급 설정 — 조달비용 · 괴리율 · 환율 · 회귀 환산 · 원화 손익</summary>
+    <div class="in">
+      <div class="grid">
+        <div><label for="fund">추가 조달비용 (연 %)</label><input id="fund" type="number" step="0.1" min="0" inputmode="decimal" placeholder="0">
+          <div class="hint">3배 중 빌린 2배분에 대한 비용(단순화). 운용보수나 과거 수익률에 이미 반영된 비용이면 0으로 두세요(중복 차감 방지).</div></div>
+        <div><label for="d0">현재 ETF 괴리율 (%)</label><input id="d0" type="number" step="0.01" inputmode="decimal" placeholder="0">
+          <div class="hint">(시장가 ÷ NAV − 1). 프리미엄 +, 디스카운트 −</div></div>
+        <div><label for="dT">예상 미래 괴리율 (%)</label><input id="dT" type="number" step="0.01" inputmode="decimal" placeholder="0">
+          <div class="hint">가정값입니다. 0이면 괴리 없음.</div></div>
+        <div><label for="basis">결과 기준</label>
+          <select id="basis"><option value="cmp">비교지수 환산 (코스피/SOX)</option><option value="act">실제 추종지수 기준</option></select>
+          <input id="actIdx" type="number" step="0.01" min="0" inputmode="decimal" placeholder="실제 추종지수 현재값 (선택)" style="margin-top:6px"></div>
+        <div><label for="volBasis">변동성 입력 기준</label>
+          <select id="volBasis"><option value="act">실제 추종지수 기준</option><option value="cmp">비교지수 변동성으로 대용</option></select>
+          <div class="hint">원칙은 실제 추종지수(USD) 변동성입니다.</div></div>
+      </div>
+
+      <div class="sub" id="fxSub">
+        <h3>환율 보정 (KORU 전용)</h3>
+        <label><input type="checkbox" id="fxOn"> 원/달러 환율 변화를 코스피 환산에 반영</label>
+        <div class="grid" style="margin-top:8px">
+          <div><label for="fxNow">현재 환율 (원/달러)</label><input id="fxNow" type="number" step="0.1" min="0" inputmode="decimal"></div>
+          <div><label for="fxFut">목표 시점 가정 환율 (원/달러)</label><input id="fxFut" type="number" step="0.1" min="0" inputmode="decimal"></div>
+        </div>
+        <div class="note">KORU의 추종지수(MSCI Korea 25/50)는 달러 기준입니다. 원화 지수인 코스피로 바꿀 때만 I<sub>KRW</sub> ≈ I<sub>USD</sub> × (가정 환율 ÷ 현재 환율)을 적용합니다. 원화 약세(환율 상승)를 가정하면 필요한 코스피가 높아집니다. 회귀 환산 모드에서는 회귀 자료에 환율 효과가 이미 들어 있으므로 이 보정을 끕니다. 환율 변동은 달러 기준 지수의 변동성도 키우므로, 변동성은 가능하면 달러 기준 지수의 과거 변동성을 쓰세요.</div>
+      </div>
+
+      <div class="sub">
+        <h3>비교지수 환산 방식</h3>
+        <select id="mapMode"><option value="simple">단순 1:1 환산 (비교지수가 실제 지수와 같은 비율로 움직인다고 가정)</option><option value="regress">회귀 보정 환산 (붙여넣은 자료로 β 추정)</option></select>
+        <div id="regBox" style="margin-top:10px">
+          <label for="regData">일별 종가 붙여넣기 — 한 줄에 <b>날짜, 실제 추종지수, 비교지수</b> (엑셀에서 3열 복사 가능)</label>
+          <textarea id="regData" placeholder="2025-11-03	1234.56	4100.12&#10;2025-11-04	1240.10	4120.50&#10;..."></textarea>
+          <div class="hint">통화·배당 기준을 맞추세요(예: 실제 지수 USD 가격지수 ↔ 코스피 가격지수). 최소 60일 이상의 같은 날짜 자료가 필요합니다. 자료가 없으면 회귀값을 만들지 않고 1:1 환산만 씁니다. 2열(날짜, 실제 지수)만 넣으면 변동성 계산과 과거 일별 복리 비교에만 쓰입니다.</div>
+          <div id="regOut" style="margin-top:8px"></div>
+        </div>
+      </div>
+
+      <div class="sub">
+        <h3>원화 투자자 최종 손익 (선택)</h3>
+        <div class="grid">
+          <div><label for="buyFx">매수 평균 환율 (원/달러)</label><input id="buyFx" type="number" step="0.1" min="0" inputmode="decimal"></div>
+          <div><label for="nowFx">현재 환율 (원/달러)</label><input id="nowFx" type="number" step="0.1" min="0" inputmode="decimal"></div>
+          <div><label for="futFx">원복 시점 가정 환율</label><input id="futFx" type="number" step="0.1" min="0" inputmode="decimal"></div>
+        </div>
+        <div id="krwOut" class="note"></div>
+      </div>
+    </div>
+  </details>
+
+  <!-- ================= 반대로 ================= -->
+  <div class="card">
+    <h2 id="revTitle">반대로: 지수를 입력하면 ETF는 얼마?</h2>
+    <div class="grid"><div><label for="tgt" id="tgtLabel">가정 지수 (pt)</label><input id="tgt" type="number" step="0.01" min="0" inputmode="decimal"></div></div>
+    <div id="rev" style="margin-top:12px"></div>
+  </div>
+
+  <!-- ================= 그래프 ================= -->
+  <div class="card">
+    <h2 id="chartTitle">변동성·기간별 원복 목표지수</h2>
+    <div class="legend" id="legend"></div>
+    <div class="chart" id="chart"><div class="tip" id="tip"></div></div>
+    <div class="note">변동성이 클수록, 기간이 길수록 변동성 손실(σ²T)이 쌓여 목표지수가 올라갑니다. 모든 시나리오는 일정한 변동성과 연속 재조정 근사를 가정합니다.</div>
+  </div>
+
+  <div class="card">
+    <h2>변동성 × 기간 매트릭스</h2>
+    <div class="tblwrap" id="mx"></div>
+    <div class="note" id="mxNote"></div>
+  </div>
+
+  <!-- ================= 일별 복리 검증 ================= -->
+  <details class="adv" id="simBox">
+    <summary>일별 복리 검증 (고급)</summary>
+    <div class="in">
+      <div class="note" style="margin-top:0">이상적 3배 ETF의 누적 배수는 V<sub>N</sub>/V<sub>0</sub> = Π(1 + 3r<sub>t</sub> − 일별 비용)입니다. 아래는 <b>가상 시뮬레이션</b>이며 실제 과거 수익률이 아닙니다. 일별 복리 결과에는 변동성 효과가 이미 들어 있으므로 변동성 손실을 다시 빼지 않습니다. 괴리율은 제외했습니다.</div>
+      <div class="row" style="margin:10px 0"><button class="btn pri" id="simBtn">시뮬레이션 실행</button><span class="note" id="simStat" style="margin:0"></span></div>
+      <div id="simOut"></div>
+      <div class="warnbox">하루에 지수가 −33.3% 이상 떨어지면 이상적인 3배 상품은 그날 가치가 0이 되어 원금 전액을 잃을 수 있습니다. 이 경우 로그 계산은 하지 않고 '전액 손실'로 표시합니다.</div>
+    </div>
+  </details>
+
+  <div class="card">
+    <h2>꼭 읽어 주세요</h2>
+    <div class="note" style="margin-top:0;line-height:1.7">
+      • 계산식: ln(I<sub>req</sub>) = [ln(평단÷현재가) + (f + 2c)T − ln((1+δ<sub>T</sub>)/(1+δ<sub>0</sub>))] ÷ 3 + σ²T. 연속 재조정 GBM 근사이며 실제 일별 복리 수익률을 보장하는 공식이 아닙니다.<br>
+      • 목표지수는 '선택한 기간 끝에 원복하려면 필요한 조건'이지 '언제 원복할지 예측한 값'이 아닙니다.<br>
+      • 미래의 변동성·환율·괴리율은 모두 가정값입니다.<br>
+      • <span id="noteIdx"></span><br>
+      • 이 페이지는 실시간 시세를 연결하지 않으면 시세를 자동으로 채우지 않습니다. 표시된 시세에는 출처와 시각을 함께 적습니다.<br>
+      • 투자 조언이 아닙니다.
+    </div>
+  </div>
+
+  <footer>
+    운용보수 기본값 — KORU 1.32% (Direxion 상품 페이지, 2026-10-07자 표기), SOXL 0.75% (TradingView 집계, 2026-11-09 확인). 직접 변경할 수 있습니다.<br>
+    SOXL은 2021-08-25부터 NYSE(ICE) Semiconductor Index를 추종하며, 그 전에는 PHLX Semiconductor Sector Index(필라델피아 반도체지수, SOX)를 추종했습니다.
+  </footer>
+</div>
+
+<script src="config.js" onerror="window.LEVER_CONFIG=window.LEVER_CONFIG||{}"></script>
+<script src="calc-core.js"></script>
+<script>
+(function(){
+"use strict";
+var PROD = {
+  koru:{sym:"KORU", name:"KORU", cmp:"코스피", cmpLong:"코스피(KOSPI)", act:"MSCI Korea 25/50", actLong:"MSCI Korea 25/50 Index (USD)", fee:1.32, vol:30,
+        info:"실제 추종지수: MSCI Korea 25/50 (USD) · 친숙한 비교지수: 코스피 · 일간 +3배 · USD 상품",
+        idxNote:"KORU는 코스피가 아니라 MSCI Korea 25/50(달러 기준)을 일간 3배 추종합니다. 코스피 목표치는 1:1(또는 회귀) 가정으로 환산한 참고 추정치이며, 구성 종목·비중·환율 차이로 실제와 다를 수 있습니다.",
+        headline:function(v){return "코스피 약 "+v+"에 도달해야 평단 회복";},
+        example:{avg:16.73, px:6.34, idx:5018.85, period:"12", vol:30}},
+  soxl:{sym:"SOXL", name:"SOXL", cmp:"필라델피아 반도체지수", cmpLong:"필라델피아 반도체지수(SOX)", act:"NYSE Semiconductor", actLong:"NYSE(ICE) Semiconductor Index", fee:0.75, vol:40,
+        info:"실제 추종지수: NYSE(ICE) Semiconductor Index · 친숙한 비교지수: 필라델피아 반도체지수(SOX) · 일간 +3배 · USD 상품",
+        idxNote:"SOXL은 2021-08-25부터 NYSE(ICE) Semiconductor Index를 추종하며 필라델피아 반도체지수(SOX)를 직접 3배 추종하지 않습니다. SOX 목표치는 1:1(또는 회귀) 가정으로 환산한 참고 추정치입니다.",
+        headline:function(v){return "필라델피아 반도체지수 약 "+v+"에 도달해야 평단 회복";},
+        example:null}
+};
+var FIELDS=["avg","px","idx","period","months","vol","fee","fund","d0","dT","basis","actIdx","volBasis","fxOn","fxNow","fxFut","mapMode","regData","buyFx","nowFx","futFx","tgt","auto"];
+var KEY="lev_recovery_v2";
+var cur="koru", S={}, livePrices={}, liveInfo={mode:"local",priceSource:"manual"};
+function $(i){return document.getElementById(i);}
+function blank(k){return {avg:"",px:"",idx:"",period:"12",months:"",vol:PROD[k].vol,fee:PROD[k].fee,fund:"",d0:"",dT:"",basis:"cmp",actIdx:"",volBasis:"act",fxOn:false,fxNow:"",fxFut:"",mapMode:"simple",regData:"",buyFx:"",nowFx:"",futFx:"",tgt:"",auto:true,autoIdx:true};}
+function load(){try{var s=localStorage.getItem(KEY);if(s)S=JSON.parse(s);}catch(e){S={};}
+  ["koru","soxl"].forEach(function(k){var b=blank(k);S[k]=Object.assign(b,S[k]||{});});
+  try{var c=localStorage.getItem(KEY+"_cur");if(c==="soxl"||c==="koru")cur=c;}catch(e){}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));localStorage.setItem(KEY+"_cur",cur);}catch(e){}}
+
+function fill(){var p=S[cur];
+  FIELDS.forEach(function(f){var el=$(f);if(!el)return;if(el.type==="checkbox")el.checked=!!p[f];else el.value=(p[f]===undefined||p[f]===null)?"":p[f];});
+  $("volR").value=Number(p.vol)||0;
+  document.querySelectorAll(".tab").forEach(function(t){t.classList.toggle("on",t.dataset.t===cur);});
+  var P=PROD[cur];
+  $("idxinfo").textContent=P.info;
+  $("idxLabel").textContent="현재 "+P.cmp+" (pt)";
+  $("idx").placeholder=cur==="koru"?"예: 5018.85":"현재 SOX 지수";
+  $("tgtLabel").textContent="가정 "+P.cmp+" (pt)";
+  $("revTitle").textContent="반대로: "+P.cmp+"를 입력하면 "+P.name+"는 얼마?";
+  $("chartTitle").textContent="변동성·기간별 원복에 필요한 "+P.cmp;
+  $("noteIdx").textContent=P.idxNote;
+  $("feeHint").textContent=P.name+" 기본값 "+P.fee+"% — "+(cur==="koru"?"Direxion 2026-10-07자 표기":"TradingView 2026-11-09 확인")+". 직접 변경 가능";
+  $("fxSub").style.display=cur==="koru"?"":"none";
+  $("exBtn").style.display=P.example?"":"none";
+  $("actIdx").placeholder=P.actLong+" 현재값 (선택)";
+}
+function read(){var p=S[cur];
+  FIELDS.forEach(function(f){var el=$(f);if(!el)return;p[f]=el.type==="checkbox"?el.checked:el.value;});
+  save();}
+
+function fmt(n,d){if(!isFinite(n))return "—";return Number(n).toLocaleString("ko-KR",{minimumFractionDigits:d,maximumFractionDigits:d});}
+function pct(x,d){if(!isFinite(x))return "—";d=d===undefined?1:d;return (x>=0?"+":"")+fmt(x*100,d)+"%";}
+function cls(x){return x>0?"up":x<0?"down":"";}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});}
+
+var lastReg=null, lastInp=null, lastRes=null;
+function months(p){return p.period==="custom"?LC.num(p.months):Number(p.period);}
+function buildInp(p,over){
+  over=over||{};
+  var M=over.months!==undefined?over.months:months(p);
+  var sig=(over.vol!==undefined?over.vol:LC.num(p.vol))/100; // 퍼센트 → 소수 변환 후 제곱
+  var map={mode:"simple"};
+  if(p.mapMode==="regress"&&lastReg&&lastReg.ok)map={mode:"regress",a:lastReg.a,b:lastReg.b};
+  var fxOn=cur==="koru"&&!!p.fxOn&&map.mode!=="regress";
+  return {A:LC.num(p.avg),P:LC.num(p.px),L:3,T:M/12,sig:sig,f:(LC.num(p.fee)||0)/100,c:(LC.num(p.fund)||0)/100,
+    d0:(LC.num(p.d0)||0)/100,dT:(LC.num(p.dT)||0)/100,idx:LC.num(p.idx),actIdx:LC.num(p.actIdx),map:map,
+    fx:{on:fxOn,now:LC.num(p.fxNow),fut:LC.num(p.fxFut)}};
+}
+function perLabel(m){if(m%12===0)return (m/12)+"년";return fmt(m,m%1?1:0)+"개월";}
+
+function render(){
+  var p=S[cur], P=PROD[cur];
+  $("months").style.display=p.period==="custom"?"":"none";
+  $("regBox").style.display=p.mapMode==="regress"?"":"none";
+  $("actIdx").style.display=p.basis==="act"?"":"none";
+  // 회귀
+  lastReg=p.regData&&p.regData.trim()?LC.regress(p.regData):null;
+  renderReg();
+  var v=LC.validate({avg:p.avg,px:p.px,idx:p.idx,months:months(p),vol:p.vol,fee:p.fee,fund:p.fund,d0:p.d0,dT:p.dT,fxOn:cur==="koru"&&p.fxOn&&p.mapMode!=="regress",fxNow:p.fxNow,fxFut:p.fxFut});
+  var need=["avg","px","idx"].filter(function(k){return String(p[k]).trim()==="";});
+  var m=$("msgs"); m.innerHTML="";
+  if(need.length===3){
+    $("res").innerHTML='<div class="headline">평단 · 현재가 · 현재 '+esc(P.cmp)+'를 입력하세요</div><div class="cond">보유기간과 변동성만 정하면 바로 계산됩니다.'+(P.example?' 처음이면 «예시값 넣기»를 눌러 보세요.':'')+'</div>';
+    clearLower(); return;
+  }
+  if(v.errors.length){v.errors.forEach(function(t){m.insertAdjacentHTML("beforeend",'<div class="e">'+esc(t)+'</div>');});$("res").innerHTML="";clearLower();return;}
+  v.warns.forEach(function(t){m.insertAdjacentHTML("beforeend",'<div class="w">'+esc(t)+'</div>');});
+  if(p.mapMode==="regress"&&!(lastReg&&lastReg.ok))m.insertAdjacentHTML("beforeend",'<div class="w">회귀 자료가 부족해 단순 1:1 환산으로 계산했습니다.</div>');
+  var inp=buildInp(p), r=LC.full(inp); lastInp=inp; lastRes=r;
+  var M=months(p), volP=LC.num(p.vol);
+  var mapLabel=r.mapNote;
+  var cond=perLabel(M)+" 보유, 연 변동성 "+fmt(volP,volP%1?1:0)+"%"+(p.volBasis==="cmp"?"(비교지수 변동성 대용)":"")+" 가정 · 보수 "+fmt(inp.f*100,2)+"%"+(inp.c?" · 조달비용 "+fmt(inp.c*100,2)+"%":"")+((inp.d0||inp.dT)?" · 괴리율 "+fmt(inp.d0*100,2)+"%→"+fmt(inp.dT*100,2)+"%":"")+" · "+mapLabel;
+  var showAct=p.basis==="act";
+  var mainVal, mainLbl, mainSub;
+  if(showAct){
+    mainLbl=P.act+" 목표치";
+    mainVal=inp.actIdx>0?fmt(r.actTarget,2):"현재값 입력 필요";
+    mainSub=inp.actIdx>0?"실제 추종지수 기준 (고급설정에 현재값 입력)":"고급설정 › 결과 기준에서 실제 추종지수 현재값을 넣으세요";
+  } else {
+    mainLbl=P.cmpLong+" 목표치";
+    mainVal="약 "+fmt(r.target.Ireq,0);
+    mainSub=mapLabel+" · 참고 추정치";
+  }
+  var h='';
+  h+='<div class="headline">'+esc(showAct?(P.act+" 약 "+(inp.actIdx>0?fmt(r.actTarget,0):"—")+"에 도달해야 평단 회복"):P.headline(fmt(r.target.Ireq,0)))+' <span class="tag">'+esc(showAct?"실제 지수 기준":mapLabel)+'</span></div>';
+  h+='<div class="cond">'+esc(cond)+' — 이 조건에서의 이론적 목표치</div>';
+  h+='<div class="kpis">';
+  h+='<div class="kpi main"><div class="t">③ '+esc(mainLbl)+'</div><div class="v">'+esc(mainVal)+'</div><div class="s">'+esc(mainSub)+'</div></div>';
+  h+='<div class="kpi"><div class="t">① 평단 회복에 필요한 ETF 상승률</div><div class="v '+cls(r.etfNeed)+'">'+pct(r.etfNeed)+'</div><div class="s">$'+fmt(inp.P,2)+' → $'+fmt(inp.A,2)+'</div></div>';
+  h+='<div class="kpi"><div class="t">② 실제 추종지수('+esc(P.act)+') 필요 상승률</div><div class="v '+cls(r.Ireq-1)+'">'+pct(r.Ireq-1)+'</div><div class="s">'+fmt(r.Ireq,4)+'배</div></div>';
+  h+='<div class="kpi"><div class="t">④ 현재 '+esc(P.cmp)+' 대비 필요 상승폭</div><div class="v '+cls(r.cmp.Ireq-1)+'">'+pct(r.cmp.Ireq-1)+'</div><div class="s">'+fmt(inp.idx,2)+' pt 기준</div></div>';
+  h+='</div>';
+  // 상세
+  var t=r.target;
+  var effVol=t.Ivol-t.I0, effCost=t.Icost-t.Ivol, effPrem=t.Ireq-t.Icost;
+  h+='<div class="tblwrap" style="margin-top:14px"><table>';
+  h+='<tr><th>항목</th><th>값</th><th>'+esc(P.cmp)+' 목표치</th></tr>';
+  h+='<tr><td>ETF 현재 손실률</td><td class="'+cls(r.lossNow)+'">'+pct(r.lossNow)+'</td><td></td></tr>';
+  h+='<tr><td>ETF 원복에 필요한 상승률</td><td class="'+cls(r.etfNeed)+'">'+pct(r.etfNeed)+'</td><td></td></tr>';
+  h+='<tr><td>실제 추종지수 필요 상승률</td><td class="'+cls(r.Ireq-1)+'">'+pct(r.Ireq-1,2)+'</td><td>'+(inp.actIdx>0?esc(P.act)+' '+fmt(r.actTarget,2):'')+'</td></tr>';
+  h+='<tr><td>변동성 손실 무시 목표지수 (σ=0, 비용 0)</td><td>'+pct(r.cmp.I0-1,2)+'</td><td>'+fmt(t.I0,2)+'</td></tr>';
+  h+='<tr><td>변동성 손실 반영 목표지수</td><td>+'+fmt(effVol,2)+' pt</td><td>'+fmt(t.Ivol,2)+'</td></tr>';
+  h+='<tr><td>운용보수·추가비용 반영 목표지수</td><td>+'+fmt(effCost,2)+' pt</td><td>'+fmt(t.Icost,2)+'</td></tr>';
+  h+='<tr><td>괴리율 보정 효과</td><td>'+(effPrem>=0?"+":"")+fmt(effPrem,2)+' pt</td><td><b>'+fmt(t.Ireq,2)+'</b></td></tr>';
+  h+='</table></div>';
+  h+='<div class="row" style="margin-top:12px;flex-wrap:wrap"><button class="btn pri" id="copyBtn">계산 결과 복사</button><span class="note" id="copyMsg" style="margin:0"></span></div>';
+  $("res").innerHTML=h;
+  $("copyBtn").addEventListener("click",copyResult);
+  renderKrw(inp,p); renderRev(inp,p); renderChart(p); renderMatrix(p); $("simOut").innerHTML=""; $("simStat").textContent="";
+}
+function clearLower(){lastRes=null;lastInp=null;["rev","mx","krwOut","simOut"].forEach(function(i){$(i).innerHTML="";});$("mxNote").textContent="";var c=$("chart");Array.prototype.slice.call(c.querySelectorAll("svg")).forEach(function(s){s.remove();});$("legend").innerHTML="";}
+
+function renderReg(){
+  var o=$("regOut"); if(!lastReg){o.innerHTML="";return;}
+  var g=lastReg, P=PROD[cur], h="";
+  h+='<div class="note" style="margin-top:0">표본: '+esc(g.start||"")+' ~ '+esc(g.end||"")+' · 실제지수 수익률 '+(g.nAct||0)+'개'+(g.bad?' · 읽지 못한 줄 '+g.bad+'개':'')+'</div>';
+  if(isFinite(g.volAct))h+='<div class="note">실제 추종지수 실현 변동성(연율): <b>'+fmt(g.volAct*100,1)+'%</b>'+(isFinite(g.volCmp)?' · 비교지수: '+fmt(g.volCmp*100,1)+'%':'')+' <button class="btn" id="useVol" style="padding:3px 8px;font-size:12px">이 변동성 적용</button></div>';
+  if(g.ok){
+    h+='<div class="note">β = <b>'+fmt(g.b,3)+'</b> (표준오차 '+fmt(g.se,3)+', 95% 범위 '+fmt(g.b-1.96*g.se,3)+'~'+fmt(g.b+1.96*g.se,3)+') · 절편 a = '+g.a.toExponential(2)+'/일 · R² = '+fmt(g.r2,3)+' · 표본 '+g.n+'일</div>';
+    if(g.msg)h+='<div class="note" style="color:var(--warnInk)">'+esc(g.msg)+'</div>';
+    h+='<div class="note">회귀 환산은 과거 관계가 유지된다는 가정입니다. 절편 a는 기간 거래일 수만큼 누적되어 결과를 크게 움직일 수 있으니 β 범위와 함께 보세요.</div>';
+  } else if(g.msg) h+='<div class="note" style="color:var(--warnInk)">'+esc(g.msg)+'</div>';
+  o.innerHTML=h;
+  var b=$("useVol"); if(b)b.addEventListener("click",function(){S[cur].vol=Math.round(g.volAct*1000)/10;S[cur].volBasis="act";fill();save();render();});
+  // 회귀 β 범위에 따른 목표 범위
+  if(g.ok&&S[cur].mapMode==="regress"&&S[cur].avg&&S[cur].px&&S[cur].idx){
+    var base=buildInp(S[cur]); var lo=Object.assign({},base,{map:{mode:"regress",a:g.a,b:g.b+1.96*g.se}}), hi=Object.assign({},base,{map:{mode:"regress",a:g.a,b:Math.max(1e-6,g.b-1.96*g.se)}}), a0=Object.assign({},base,{map:{mode:"regress",a:0,b:g.b}});
+    try{var rl=LC.full(lo),rh=LC.full(hi),ra=LC.full(a0);
+      o.insertAdjacentHTML("beforeend",'<div class="note">β 95% 범위에 따른 '+esc(P.cmp)+' 목표: '+fmt(rl.target.Ireq,0)+' ~ '+fmt(rh.target.Ireq,0)+' · 절편 제외(a=0) 시 '+fmt(ra.target.Ireq,0)+'</div>');}catch(e){}
+  }
+}
+
+function renderKrw(inp,p){
+  var b=LC.num(p.buyFx), n=LC.num(p.nowFx), f=LC.num(p.futFx), o=$("krwOut");
+  if(!(b>0&&n>0)){o.innerHTML="매수 환율과 현재 환율을 넣으면 원화 기준 손익을 계산합니다. 기본 계산(달러 기준)에는 영향을 주지 않습니다.";return;}
+  var k=LC.krw(inp.A,inp.P,b,n), h='현재 원화 기준 손익률: <b class="'+cls(k.pnl)+'">'+pct(k.pnl)+'</b> (달러 기준 '+pct(inp.P/inp.A-1)+')';
+  if(f>0){
+    var A2=inp.A*b/f; var inp2=Object.assign({},inp,{A:A2}); var r2=LC.full(inp2);
+    h+='<br>원복 시점 환율 '+fmt(f,1)+'원 가정 시 원화 원금 회복에 필요한 ETF 가격: <b>$'+fmt(A2,2)+'</b> → 필요한 '+esc(PROD[cur].cmp)+' 약 <b>'+fmt(r2.target.Ireq,0)+'</b> (같은 기간·변동성 가정)';
+  }
+  o.innerHTML=h;
+}
+
+function renderRev(inp,p){
+  var P=PROD[cur], o=$("rev"), X=LC.num(p.tgt), h="";
+  if(X>0){
+    var Ia=LC.fromCmp(X/inp.idx,inp);
+    var e0=inp.P*Math.pow(Ia,3), e1=inp.P*LC.etfMult(Ia,inp);
+    h+='<div class="kpis" style="grid-template-columns:1fr 1fr">';
+    h+='<div class="kpi"><div class="t">이상적 경우 (변동성·비용 0)</div><div class="v">$'+fmt(e0,2)+'</div><div class="s">평단 대비 <span class="'+cls(e0/inp.A-1)+'">'+pct(e0/inp.A-1)+'</span></div></div>';
+    h+='<div class="kpi"><div class="t">입력한 변동성·기간·비용 반영</div><div class="v">$'+fmt(e1,2)+'</div><div class="s">평단 대비 <span class="'+cls(e1/inp.A-1)+'">'+pct(e1/inp.A-1)+'</span>'+(e1>=inp.A?' · 원복':' · 미회복')+'</div></div></div>';
+  } else h+='<div class="note" style="margin-top:0">가정 '+esc(P.cmp)+'를 입력하면 예상 '+P.name+' 가격이 나옵니다. 아래 표는 구간별 자동 계산입니다.</div>';
+  var ms=[0.8,0.9,1,1.1,1.2,1.3,1.4,1.5,1.6,1.8,2];
+  h+='<div class="tblwrap"><table style="margin-top:12px"><tr><th>'+esc(P.cmp)+'</th><th>현재 대비</th><th>'+P.name+' (이상적)</th><th>'+P.name+' (가정 반영)</th><th>평단 대비</th></tr>';
+  ms.forEach(function(m){var Ia=LC.fromCmp(m,inp), a=inp.P*Math.pow(Ia,3), b=inp.P*LC.etfMult(Ia,inp), d=b/inp.A-1;
+    h+='<tr><td>'+fmt(inp.idx*m,0)+'</td><td>'+pct(m-1,0)+'</td><td>$'+fmt(a,2)+'</td><td>$'+fmt(b,2)+'</td><td class="'+cls(d)+'">'+pct(d)+'</td></tr>';});
+  h+='</table></div>';
+  o.innerHTML=h;
+}
+
+var PERIODS=[1,3,6,12,24], VOLS=[0,10,20,30,40,50,60];
+function renderChart(p){
+  var P=PROD[cur], box=$("chart"), tip=$("tip");
+  Array.prototype.slice.call(box.querySelectorAll("svg")).forEach(function(s){s.remove();});
+  var W=Math.max(320,box.clientWidth||700), H=Math.round(Math.min(360,Math.max(240,W*0.5)));
+  var m={l:58,r:56,t:12,b:34}, iw=W-m.l-m.r, ih=H-m.t-m.b;
+  var series=PERIODS.map(function(mo,i){var pts=[];for(var v=0;v<=60;v++){pts.push({v:v,y:LC.full(buildInp(p,{months:mo,vol:v})).target.Ireq});}return {mo:mo,c:"var(--s"+(i+1)+")",pts:pts};});
+  var ymin=Infinity,ymax=-Infinity;series.forEach(function(s){s.pts.forEach(function(q){ymin=Math.min(ymin,q.y);ymax=Math.max(ymax,q.y);});});
+  var base=LC.num(p.idx); ymin=Math.min(ymin,base);
+  var span=ymax-ymin||1; var step=niceStep(span/5); var y0=Math.floor(ymin/step)*step, y1=Math.ceil(ymax/step)*step;
+  var X=function(v){return m.l+v/60*iw;}, Y=function(y){return m.t+ih-(y-y0)/(y1-y0)*ih;};
+  var svg='<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="변동성별 목표지수 그래프">';
+  for(var g=y0;g<=y1+1e-9;g+=step){svg+='<line x1="'+m.l+'" x2="'+(m.l+iw)+'" y1="'+Y(g)+'" y2="'+Y(g)+'" stroke="var(--line)" stroke-width="1"/><text x="'+(m.l-6)+'" y="'+(Y(g)+4)+'" text-anchor="end" font-size="11" fill="var(--mute)">'+fmt(g,0)+'</text>';}
+  for(var v=0;v<=60;v+=10){svg+='<text x="'+X(v)+'" y="'+(H-12)+'" text-anchor="middle" font-size="11" fill="var(--mute)">'+v+'%</text>';}
+  svg+='<text x="'+(m.l+iw/2)+'" y="'+(H)+'" text-anchor="middle" font-size="11" fill="var(--mute)">연간 변동성</text>';
+  if(base>=y0&&base<=y1)svg+='<line x1="'+m.l+'" x2="'+(m.l+iw)+'" y1="'+Y(base)+'" y2="'+Y(base)+'" stroke="var(--mute)" stroke-dasharray="4 4"/><text x="'+(m.l+4)+'" y="'+(Y(base)-5)+'" font-size="11" fill="var(--mute)">현재 '+esc(P.cmp)+' '+fmt(base,0)+'</text>';
+  var labels=[];
+  series.forEach(function(s){var d=s.pts.map(function(q,i){return (i?"L":"M")+X(q.v).toFixed(1)+","+Y(q.y).toFixed(1);}).join("");
+    svg+='<path d="'+d+'" fill="none" stroke="'+s.c+'" stroke-width="2" stroke-linejoin="round"/>';
+    labels.push({y:Y(s.pts[60].y),t:perLabel(s.mo),c:s.c});});
+  labels.sort(function(a,b){return a.y-b.y;});for(var i=1;i<labels.length;i++){if(labels[i].y-labels[i-1].y<13)labels[i].y=labels[i-1].y+13;}
+  labels.forEach(function(l){svg+='<text x="'+(m.l+iw+6)+'" y="'+(l.y+4)+'" font-size="11" fill="var(--ink2)">'+l.t+'</text>';});
+  var sv=LC.num(p.vol), sm=months(p);
+  if(sv>=0&&sv<=60){var sy=LC.full(buildInp(p)).target.Ireq; if(sy>=y0&&sy<=y1)svg+='<circle cx="'+X(sv)+'" cy="'+Y(sy)+'" r="5" fill="var(--ink)" stroke="var(--card)" stroke-width="2"/><text x="'+(X(sv)+8)+'" y="'+(Y(sy)-8)+'" font-size="11" font-weight="700" fill="var(--ink)">선택 '+fmt(sy,0)+'</text>';}
+  svg+='<line id="xh" x1="0" x2="0" y1="'+m.t+'" y2="'+(m.t+ih)+'" stroke="var(--mute)" stroke-width="1" style="display:none"/>';
+  svg+='<rect id="hit" x="'+m.l+'" y="'+m.t+'" width="'+iw+'" height="'+ih+'" fill="transparent"/></svg>';
+  box.insertAdjacentHTML("afterbegin",svg);
+  $("legend").innerHTML=series.map(function(s){return '<span><i style="background:'+s.c+'"></i>'+perLabel(s.mo)+'</span>';}).join("")+'<span style="color:var(--mute)">● 선택값 ('+perLabel(sm)+', '+fmt(sv,0)+'%)</span>';
+  var hit=box.querySelector("#hit"), xh=box.querySelector("#xh"), svgEl=box.querySelector("svg");
+  function move(ev){var r=svgEl.getBoundingClientRect(), sc=W/r.width, cx=((ev.touches?ev.touches[0].clientX:ev.clientX)-r.left)*sc;
+    var v=Math.round(Math.max(0,Math.min(60,(cx-m.l)/iw*60)));xh.setAttribute("x1",X(v));xh.setAttribute("x2",X(v));xh.style.display="";
+    tip.innerHTML='<div style="color:var(--mute)">변동성 '+v+'%</div>'+series.map(function(s){return '<div><span style="display:inline-block;width:10px;height:3px;background:'+s.c+';margin-right:6px;vertical-align:middle"></span>'+perLabel(s.mo)+' <b>'+fmt(s.pts[v].y,0)+'</b></div>';}).join("");
+    tip.style.display="block";var px=X(v)/sc; tip.style.left=(px+12+tip.offsetWidth>r.width?px-tip.offsetWidth-12:px+12)+"px";tip.style.top="8px";}
+  function out(){xh.style.display="none";tip.style.display="none";}
+  hit.addEventListener("mousemove",move);hit.addEventListener("touchmove",move,{passive:true});hit.addEventListener("mouseleave",out);hit.addEventListener("touchend",out);
+}
+function niceStep(x){var p=Math.pow(10,Math.floor(Math.log10(x))),n=x/p;return (n<1.5?1:n<3?2:n<7?5:10)*p;}
+
+function renderMatrix(p){
+  var P=PROD[cur], sv=LC.num(p.vol), sm=months(p);
+  var vals=VOLS.map(function(v){return PERIODS.map(function(mo){return LC.full(buildInp(p,{months:mo,vol:v})).target.Ireq;});});
+  var mn=Infinity,mx=-Infinity;vals.forEach(function(r){r.forEach(function(x){mn=Math.min(mn,x);mx=Math.max(mx,Math.log(x));});});mn=Math.log(mn);
+  var ramp=["--q100","--q200","--q300","--q400","--q500","--q600","--q700"];
+  var h='<table class="mx"><tr><th>변동성 \\ 기간</th>'+PERIODS.map(function(mo){return '<th>'+perLabel(mo)+'</th>';}).join("")+'</tr>';
+  VOLS.forEach(function(v,i){h+='<tr><td>'+v+'%</td>'+PERIODS.map(function(mo,j){var x=vals[i][j],k=mx>mn?Math.round((Math.log(x)-mn)/(mx-mn)*6):0;var sel=(v===sv&&mo===sm)?' sel':'';
+    return '<td class="'+sel+'" style="background:var('+ramp[k]+');color:'+(k>=4?"#fff":"#0b0b0b")+'" title="'+v+'% · '+perLabel(mo)+': '+fmt(x,2)+'">'+fmt(x,0)+'</td>';}).join("")+'</tr>';});
+  h+='</table>';
+  $("mx").innerHTML=h;
+  var inTbl=VOLS.indexOf(sv)>=0&&PERIODS.indexOf(sm)>=0;
+  $("mxNote").textContent="각 칸은 평단 회복에 필요한 "+P.cmp+" 목표치입니다(색이 진할수록 높음). "+(inTbl?"굵은 테두리가 선택한 조건입니다.":"선택한 조건("+perLabel(sm)+", "+fmt(sv,1)+"%)은 표 사이 값이며 결과 카드의 "+fmt(lastRes.target.Ireq,0)+"입니다.")+" 모든 칸은 일정한 변동성·연속 재조정 가정입니다.";
+}
+
+function runSim(){
+  if(!lastInp||!lastRes){$("simStat").textContent="먼저 기본 입력을 채우세요.";return;}
+  var inp=lastInp, r=lastRes, P=PROD[cur];
+  $("simStat").textContent="계산 중…";
+  setTimeout(function(){
+    var mc=LC.monteCarlo(inp,r.Ireq,2000,20261109), sc=LC.scenarios(inp,r.Ireq);
+    var nav0=inp.P/(1+inp.d0); // 괴리율 제외 NAV 기준
+    var gbmPx=nav0*LC.etfMultNav(r.Ireq,inp);
+    var h='<div class="note" style="margin-top:0"><b>가상 몬테카를로</b> — 실제 추종지수가 '+perLabel(months(S[cur]))+' 뒤 정확히 '+pct(r.Ireq-1,1)+' 오른 경로 '+mc.paths.toLocaleString()+'개(연 변동성 '+fmt(inp.sig*100,0)+'%, '+mc.N+'거래일)를 만들어 일별 3배 복리로 계산했습니다.</div>';
+    h+='<div class="tblwrap"><table><tr><th>구분</th><th>'+P.name+' 가격(NAV 기준)</th><th>평단 대비</th></tr>';
+    var row=function(n,v){return '<tr><td>'+n+'</td><td>$'+fmt(v,2)+'</td><td class="'+cls(v/inp.A-1)+'">'+pct(v/inp.A-1)+'</td></tr>';};
+    h+=row("GBM 근사 (계산기 수식)",gbmPx)+row("일별 복리 평균",nav0*mc.mean)+row("일별 복리 중앙값",nav0*mc.median)+row("하위 5% 경로",nav0*mc.p05)+row("상위 5% 경로",nav0*mc.p95);
+    h+='</table></div>';
+    var hit=mc.sorted.filter(function(x){return nav0*x>=inp.A;}).length;
+    h+='<div class="note">같은 지수에 도착해도 경로에 따라 결과가 갈립니다. 평단 이상으로 끝난 경로: '+fmt(hit/mc.paths*100,1)+'% · 전액 손실 경로: '+mc.wiped+'개</div>';
+    h+='<div class="note" style="margin-top:14px"><b>가상 시나리오 경로</b> — 모두 같은 목표 지수('+pct(r.Ireq-1,1)+')에 도착하는 인위적 경로입니다.</div>';
+    h+='<div class="tblwrap"><table><tr><th>시나리오</th><th>실현 변동성</th><th>일별 복리</th><th>GBM 근사</th><th>차이</th></tr>';
+    sc.forEach(function(s){var d=nav0*s.daily, g=nav0*s.gbm;
+      h+='<tr><td>'+esc(s.name)+'</td><td>'+fmt(s.realizedVol*100,1)+'%</td><td>'+(s.wiped?'<b class="down">전액 손실</b>':'$'+fmt(d,2))+'</td><td>$'+fmt(g,2)+'</td><td>'+(s.wiped?'—':pct(d/g-1))+'</td></tr>';});
+    h+='</table></div>';
+    if(lastReg&&lastReg.actualReturns&&lastReg.actualReturns.length>=20){
+      var hs=LC.historical(lastReg.actualReturns,inp);
+      h+='<div class="note" style="margin-top:14px"><b>붙여넣은 과거 실제 추종지수 자료</b> ('+esc(lastReg.start)+' ~ '+esc(lastReg.end)+', '+hs.n+'일): 지수 '+pct(hs.I-1)+', 실현 변동성 '+fmt(hs.vol*100,1)+'%</div>';
+      h+='<div class="tblwrap"><table><tr><th>구분</th><th>이상적 3배 누적 배수</th></tr><tr><td>실제 일별 복리 (과거 자료)</td><td>'+(hs.wiped?'전액 손실':fmt(hs.daily,4)+'배 ('+pct(hs.daily-1)+')')+'</td></tr><tr><td>GBM 근사 (실현 변동성 사용)</td><td>'+fmt(hs.gbm,4)+'배 ('+pct(hs.gbm-1)+')</td></tr></table></div>';
+      h+='<div class="note">이상적 3배 상품 기준이며 실제 '+P.name+'의 과거 수익률이 아닙니다(추적오차·괴리율 미반영).</div>';
+    }
+    $("simOut").innerHTML=h; $("simStat").textContent="완료";
+  },20);
+}
+
+function copyResult(){
+  if(!lastRes)return; var p=S[cur],P=PROD[cur],r=lastRes,inp=lastInp;
+  var lines=["[3배 레버리지 원복 계산]",
+    "상품: "+P.name+" (실제 추종지수: "+P.actLong+")",
+    "기준 지수: "+P.cmpLong+" 현재 "+fmt(inp.idx,2)+" pt",
+    "평단: $"+fmt(inp.A,2)+" / 현재가: $"+fmt(inp.P,2)+" ("+pct(r.lossNow)+")",
+    "기간: "+perLabel(months(p))+" / 연 변동성: "+fmt(LC.num(p.vol),1)+"%"+(p.volBasis==="cmp"?" (비교지수 대용)":"")+" / 보수 "+fmt(inp.f*100,2)+"%"+(inp.c?" / 조달 "+fmt(inp.c*100,2)+"%":""),
+    "ETF 필요 상승률: "+pct(r.etfNeed)+" / 실제 추종지수 필요 상승률: "+pct(r.Ireq-1,2),
+    "목표 "+P.cmp+": 약 "+fmt(r.target.Ireq,2)+" pt ("+pct(r.cmp.Ireq-1,1)+")",
+    "환산 방식: "+r.mapNote+(r.mapNote.indexOf("회귀")<0?" (1:1 상승률 가정 참고값)":""),
+    "※ 연속 재조정 근사 · 특정 시점 원복 조건이며 예측 아님 · 투자 조언 아님"];
+  var text=lines.join("\n"), msg=$("copyMsg");
+  function fallback(){var ta=document.createElement("textarea");ta.value=text;ta.style.position="fixed";ta.style.opacity="0";document.body.appendChild(ta);ta.select();var ok=false;try{ok=document.execCommand("copy");}catch(e){}ta.remove();msg.textContent=ok?"복사했습니다":"복사가 막혀 있습니다. 화면을 길게 눌러 복사하세요.";}
+  try{if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){msg.textContent="복사했습니다";},fallback);}else fallback();}catch(e){fallback();}
+}
+
+/* ---------- 실시간 시세 ---------- */
+var KEYS=["KORU","SOXL","NASDAQ","KOSPI","SOX","USDKRW"];
+var KMETA={KORU:{n:"KORU",u:"$",d:2},SOXL:{n:"SOXL",u:"$",d:2},NASDAQ:{n:"나스닥",u:"",d:2,px:"나스닥 대용(QQQ)"},KOSPI:{n:"코스피",u:"",d:2,px:"한국 대용(EWY)"},SOX:{n:"필라델피아 반도체",u:"",d:2,px:"반도체 대용(SOXX)"},USDKRW:{n:"원/달러",u:"",d:1}};
+var SRC={finnhub:"Finnhub",pusher:"송신기",db:"공유DB",manual:"직접입력"};
+function idxKey(){return cur==="koru"?"KOSPI":"SOX";}
+function realIdx(q){return q&&!q.proxy&&q.src!=="manual"&&q.p>0;}
+function qName(k,q){return q&&q.proxy?KMETA[k].px:KMETA[k].n;}
+function qVal(k,q){if(!q)return "—";var u=q.proxy?"$":KMETA[k].u;return u+fmt(q.p,q.proxy?2:KMETA[k].d);}
+function qChg(q){return q&&q.pc?q.p/q.pc-1:NaN;}
+function arrow(x){return !isFinite(x)?"":x>0?"▲":x<0?"▼":"■";}
+function tm(ts){try{return new Date(ts).toLocaleTimeString("ko-KR",{timeZone:"Asia/Seoul",hour:"2-digit",minute:"2-digit",hour12:false});}catch(e){return "";}}
+function renderLive(){
+  var any=KEYS.some(function(k){return livePrices[k]&&livePrices[k].src!=="manual";});
+  $("liveDot").className="livedot"+(any?" on":"");
+  // 티커 테이프
+  var items=KEYS.map(function(k){var q=livePrices[k],c=qChg(q);
+    return '<span class="it"><b>'+esc(qName(k,q))+'</b>'+qVal(k,q)+(isFinite(c)?' <span class="'+cls(c)+'">'+arrow(c)+' '+pct(c,2)+'</span>':'')+'</span>';}).join("");
+  if(!any)items+='<span class="it" style="color:var(--mute)">실시간 시세 미연결 · 현재가는 직접 입력</span>';
+  $("tapeRun").innerHTML=items+items;
+  // 시장 타일 (지수)
+  $("mkt").innerHTML=["NASDAQ","KOSPI","SOX","USDKRW"].map(function(k){var q=livePrices[k],c=qChg(q);
+    return '<div class="m"><div class="n">'+esc(qName(k,q))+'</div><div class="v">'+qVal(k,q)+'</div><div class="c '+cls(c)+'">'+(isFinite(c)?arrow(c)+' '+pct(c,2):'&nbsp;')+'</div><div class="s">'+(q?esc(SRC[q.src]||q.src)+' '+tm(q.ts):'미연결')+'</div></div>';}).join("");
+  var sess=window.__usSession?window.__usSession():null;
+  $("livebar").innerHTML=any?('<span class="note" style="margin:0">미국 '+esc(sess?sess.label:"")+(sess&&sess.key==="overnight"?" — 데이마켓 시세는 무료 소스가 없어 직전 체결가":"")+' · 수익 <span class="up">▲빨강</span> / 손실 <span class="down">▼파랑</span>'+(KEYS.some(function(k){return livePrices[k]&&livePrices[k].proxy;})?' · "대용"은 지수가 아니라 비슷한 ETF 가격($)입니다':'')+'</span>')
+    :'<span class="note" style="margin:0">실시간 시세 미연결 — 현재가와 지수는 증권사 앱(프리·애프터·데이마켓 포함)의 값을 직접 입력하세요.</span>';
+  // 현재가 자동 반영 칩
+  var q=livePrices[PROD[cur].sym];
+  if(q&&q.src!=="manual"){
+    $("liveChip").innerHTML='<label class="chip"><input type="checkbox" id="auto" '+(S[cur].auto?"checked":"")+'> 실시간 $'+fmt(q.p,2)+' 자동 반영</label>';
+    $("auto").addEventListener("change",function(e){S[cur].auto=e.target.checked;save();applyLive();});
+  } else $("liveChip").innerHTML="";
+  // 현재 지수 자동 반영 칩 (진짜 지수일 때만)
+  var iq=livePrices[idxKey()];
+  if(realIdx(iq)){
+    $("idxChip").innerHTML='<label class="chip"><input type="checkbox" id="autoIdx" '+(S[cur].autoIdx!==false?"checked":"")+'> 실시간 '+esc(KMETA[idxKey()].n)+' '+fmt(iq.p,2)+' 자동 반영</label>';
+    $("autoIdx").addEventListener("change",function(e){S[cur].autoIdx=e.target.checked;save();applyLive();});
+  } else if(iq&&iq.proxy){
+    $("idxChip").innerHTML='<div class="hint">시세판의 '+esc(KMETA[idxKey()].px)+'는 지수가 아니라 자동 반영하지 않습니다.</div>';
+  } else $("idxChip").innerHTML="";
+}
+function applyLive(){
+  var changed=false, q=livePrices[PROD[cur].sym];
+  if(q&&q.src!=="manual"&&S[cur].auto){var v=String(q.p);if(S[cur].px!==v){S[cur].px=v;$("px").value=v;changed=true;}}
+  var iq=livePrices[idxKey()];
+  if(realIdx(iq)&&S[cur].autoIdx!==false){var w=String(iq.p);if(S[cur].idx!==w){S[cur].idx=w;$("idx").value=w;changed=true;}}
+  if(changed){save();render();}
+}
+
+/* ---------- 이벤트 ---------- */
+document.querySelectorAll(".tab").forEach(function(b){b.addEventListener("click",function(){read();cur=b.dataset.t;save();fill();renderLive();applyLive();render();});});
+FIELDS.forEach(function(f){var el=$(f);if(!el)return;var ev=(el.tagName==="SELECT"||el.type==="checkbox")?"change":"input";
+  el.addEventListener(ev,function(){
+    if(f==="px"&&S[cur].auto&&livePrices[PROD[cur].sym]&&livePrices[PROD[cur].sym].src!=="manual"){S[cur].auto=false;renderLive();}
+    if(f==="idx"&&S[cur].autoIdx!==false&&realIdx(livePrices[idxKey()])){S[cur].autoIdx=false;renderLive();}
+    read();if(f==="vol")$("volR").value=Number(el.value)||0;render();});});
+$("volR").addEventListener("input",function(){$("vol").value=this.value;read();render();});
+$("exBtn").addEventListener("click",function(){var e=PROD[cur].example;if(!e)return;Object.assign(S[cur],{avg:e.avg,px:e.px,idx:e.idx,period:e.period,vol:e.vol,auto:false,autoIdx:false});save();fill();renderLive();render();});
+$("clrBtn").addEventListener("click",function(){S[cur]=blank(cur);save();fill();renderLive();render();});
+$("simBtn").addEventListener("click",runSim);
+var rt;window.addEventListener("resize",function(){clearTimeout(rt);rt=setTimeout(function(){render();},150);});
+
+load();fill();render();renderLive();
+window.__calc={setPrices:function(p){livePrices=Object.assign({},livePrices,p);renderLive();applyLive();},S:S,get cur(){return cur;},LC:LC,render:render,lastRes:function(){return lastRes;}};
+
+/* live.js 는 선택 사항(파일로 직접 열면 모듈이 막힐 수 있음) */
+try{
+  import("./live.js").then(function(mod){
+    window.__usSession=mod.usSession;
+    return mod.initLive().then(function(l){liveInfo=l;mod.onPrices(function(p){livePrices=p;renderLive();applyLive();});renderLive();});
+  }).catch(function(e){console.warn("실시간 모듈 없음",e);});
+}catch(e){}
+})();
+</script>
+</body>
+</html>
